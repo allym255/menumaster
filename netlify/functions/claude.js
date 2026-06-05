@@ -7,7 +7,7 @@ exports.handler = async (event) => {
   if (!ANTHROPIC_API_KEY) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "API key not configured. Please set ANTHROPIC_API_KEY in Netlify environment variables." }),
+      body: JSON.stringify({ error: "API key not configured. Set ANTHROPIC_API_KEY in Netlify environment variables." }),
     };
   }
 
@@ -22,7 +22,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1000,
+        max_tokens: body.max_tokens || 1000,
         system: body.system,
         messages: body.messages,
       }),
@@ -38,10 +38,16 @@ exports.handler = async (event) => {
       };
     }
 
+    // Handle both text and tool_use content blocks
+    const text = data.content
+      ?.filter(b => b.type === "text")
+      ?.map(b => b.text)
+      ?.join("") || "";
+
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: data.content?.[0]?.text || "" }),
+      body: JSON.stringify({ text }),
     };
   } catch (err) {
     return {
